@@ -1,0 +1,10 @@
+sentence-transformers
+langchain
+pinecone[grpc]
+langchain-pinecone
+langchain_community
+langchain_experimental
+langchain_groq
+python-dotenv
+streamlit
+-e .
