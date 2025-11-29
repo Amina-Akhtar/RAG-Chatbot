@@ -1,4 +1,5 @@
-from langchain_community.document_loaders import PDFPlumberLoader
+from PyPDF2 import PdfReader
+from langchain.schema import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 def upload_document(file):
@@ -6,12 +7,19 @@ def upload_document(file):
         f.write(file.getbuffer())
 
 def load_document(doc_path):
-    loader = PDFPlumberLoader(doc_path)
-    document = loader.load()
+    reader= PdfReader(doc_path)
+    document= ""
+    for i in range(len(reader.pages)):
+        page= reader.pages[i]
+        text=page.extract_text()
+        if text:
+            document += text+"\n"
     return document
 
-def split_document(doc_text):
+def split_document(document):
     split = RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=100)
-    text = split.split_documents(doc_text)
+    # convert text into list of Document
+    docs = [Document(page_content=document)]
+    text = split.split_documents(docs)
     #texts = [t.page_content for t in text]
     return text
