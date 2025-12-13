@@ -6,10 +6,10 @@ from langchain_groq import ChatGroq
 from langgraph.graph import END, StateGraph, START
 from pydantic import BaseModel, Field
 from langchain_tavily import TavilySearch
-from langchain.memory import ConversationBufferMemory
 import os
 from dotenv import load_dotenv
 from src.embeddings import retrieve_embeddings
+from langgraph.checkpoint.memory import InMemorySaver
 
 load_dotenv()
 GROQ_API_KEY=os.getenv("GROQ_API_KEY")
@@ -17,7 +17,7 @@ os.environ["GROQ_API_KEY"]=GROQ_API_KEY
 
 class Evaluator(BaseModel):
     """Classify retrieved documents based on how relevant it is to the question."""
-    binary_score: str = Field(description="Documents are relevant to the question, Only respond with 'yes' or 'no'.")
+    binary_score: str = Field(description="Documents are relevant to the question, Only respond with 'Yes' or 'No'.")
    
 class GraphState(TypedDict):
      """ Represents the state of the graph
@@ -41,14 +41,9 @@ class ChatAgent:
             )
         self.retriever=retrieve_embeddings()
         self.web_search_tool = TavilySearch(k=3)
-        self.app=self.generate_graph()
         self.llm_evaluator= self.llm.with_structured_output(Evaluator)
-        self.memory= ConversationBufferMemory(
-            memory_key="history",
-            return_messages=True,
-            output_key='answer' ,
-            k=3
-            )
+        self.checkpointer=InMemorySaver()
+        self.app=self.generate_graph()
         agent = self.app.get_graph().draw_mermaid_png()
         with open("src/agent.png", "wb") as f:
              f.write(agent)
@@ -72,7 +67,7 @@ class ChatAgent:
         workflow.add_edge("transform_query","web_search")
         workflow.add_edge("web_search","generate")
         workflow.add_edge("generate",END)
-        app=workflow.compile()
+        app=workflow.compile(checkpointer=self.checkpointer)
         return app
   
     def retrieve(self,state:GraphState)->GraphState:
@@ -86,17 +81,14 @@ class ChatAgent:
         """Generate answer based on question, retrieved documents and chat history"""
         question = state["question"]
         documents = state["documents"]
-        history = self.memory.load_memory_variables({})["history"]
         context = "\n".join([d.page_content for d in documents])
         generate_prompt=f"""You are an expert assistant for question-answering tasks. 
-        Use the following pieces of retrieved context and chat history (if available) to answer the question. 
+        Use the following pieces of retrieved context to answer the question. 
         Question:{question}
         Context:{context}
-        History:{history} 
         Keep the answer concise."""
         response = self.llm.invoke(generate_prompt)
         state["answer"]=response.content
-        self.memory.save_context({"question": question}, {"answer": response.content})
         return state
 
     def evaluate_documents(self,state:GraphState)->GraphState:
@@ -157,7 +149,8 @@ class ChatAgent:
           "answer": "",
           "web_search": "No",
           }
-        result= self.app.invoke(initial_state)
+        thread = {"configurable": {"thread_id": "1"}}
+        result= self.app.invoke(initial_state,config=thread)
         return result["answer"]
         # return result
         
