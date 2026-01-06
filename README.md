@@ -4,6 +4,9 @@ A Corrective Retrieval-Augmented Generation-cRAG chatbot that allows users to ch
 
 For agent workflow, see [LangGraph Agent](src/agent.png)
 
+### Hugging Face Model 
+
+[Prompt Classifier](https://huggingface.co/AminaAkhtar/Llama-3.2-1B-prompt-classifier)
 
 ## Technologies Used: 
 
@@ -11,8 +14,8 @@ LangChain, LangGraph, Pinecone, Streamlit
 
 ## How to run: 
 
-pip install -r requirements.txt
+```pip install -r requirements.txt```
 
 Create .env file with PINECONE_API_KEY, GROQ_API_KEY, TAVILY_API_KEY
 
-streamlit run app.py
+```streamlit run app.py```
