@@ -6,7 +6,7 @@ For agent workflow, see [LangGraph Agent](src/agent.png)
 
 ### Hugging Face Model 
 
-[Prompt Classifier](https://huggingface.co/AminaAkhtar/Llama-3.2-1B-prompt-classifier)
+For finetuned model files, see [Prompt Classifier](https://huggingface.co/AminaAkhtar/Llama-3.2-1B-prompt-classifier)
 
 ## Technologies Used: 
 
