@@ -4,9 +4,7 @@ A Corrective Retrieval-Augmented Generation-cRAG chatbot that allows users to ch
 
 For agent workflow, see [LangGraph Agent](src/agent.png)
 
-### Hugging Face Model 
-
-For finetuned model files, see [Prompt Classifier](https://huggingface.co/AminaAkhtar/Llama-3.2-1B-prompt-classifier)
+For finetuned model files, see [Hugging Face Prompt Classifier](https://huggingface.co/AminaAkhtar/Llama-3.2-1B-prompt-classifier)
 
 ## Technologies Used: 
 
