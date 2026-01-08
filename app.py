@@ -10,7 +10,7 @@ if 'conversation_history' not in st.session_state:
     st.session_state.conversation_history = []
 if 'agent' not in st.session_state:
         st.session_state.agent = ChatAgent()
-st.title("cRAG Chatbot")
+st.title("Secure-cRAG")
 st.write("Upload a PDF file to start chat")
 uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"], label_visibility="collapsed")
 
@@ -39,19 +39,60 @@ st.divider()
 
 for message in st.session_state.conversation_history:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        if message["role"] == "assistant":
+            with st.expander("Debug Information"):
+                st.markdown("Prompt Classification:")
+                st.write(message["debug"]["label"])
+                st.markdown("Web Search:")
+                st.write(message["debug"]["web_search"])
+                st.markdown("Retrieved Context:")
+                for doc in message["debug"]["documents"]:
+                    if isinstance(doc, str):
+                        st.write(doc)
+                    else:
+                        st.write(doc.page_content)
+        st.markdown(message["content"])                
 
 if user_input := st.chat_input("Type your message..."):
-    st.session_state.conversation_history.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
-
+    st.session_state.conversation_history.append({
+        "role": "user",
+        "content": user_input
+    })
     if st.session_state.uploaded_file is None:
         response= "Please upload a PDF file to start chat."
         st.info(response)
     else:
         with st.spinner("Thinking"):
-         response = st.session_state.agent.run(user_input)
-         with st.chat_message("assistant"):
-          st.markdown(response)
-    st.session_state.conversation_history.append({"role": "assistant", "content": response})
+            result = st.session_state.agent.run(user_input)
+            label = result["prompt_label"]
+            web_search = result["web_search"]
+            documents = result.get("documents", [])
+            if label == 'Benign':
+               response = result["answer"]
+            else:
+               response = "The question has been identified as potentially malicious and cannot be processed. Consider rephrasing it or try a different question."
+            with st.expander("Debug Information"):
+                st.markdown("Prompt Classification:")
+                st.write(label)
+                st.markdown("Web Search:")
+                st.write(web_search)
+                st.markdown("Retrieved Context:")
+                for doc in documents:
+                    if isinstance(doc, str):
+                        st.write(doc)
+                    else:
+                        st.write(doc.page_content)
+            with st.chat_message("assistant"):
+               st.markdown(response)
+            st.session_state.conversation_history.append({
+            "role": "assistant",
+            "content": response,
+            "debug": {
+              "label": label,
+              "web_search": web_search,
+              "documents": documents}
+            })
+
+# python -m streamlit run app.py    
